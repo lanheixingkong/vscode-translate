@@ -1,0 +1,172 @@
+{
+  "name": "llm-live-translate",
+  "displayName": "LLM Live Translate",
+  "description": "Translate full files or selections into a read-only live preview without modifying source files.",
+  "version": "0.2.6",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [
+    "onCommand:llmLiveTranslate.translateFile",
+    "onCommand:llmLiveTranslate.translateSelection",
+    "onCommand:llmLiveTranslate.refresh",
+    "onCommand:llmLiveTranslate.configureApiKey",
+    "onFileSystem:llm-translate"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "llmLiveTranslate.translateFile",
+        "title": "LLM Translate: Translate File",
+        "icon": {
+          "light": "media/translate-light.svg",
+          "dark": "media/translate.svg"
+        }
+      },
+      {
+        "command": "llmLiveTranslate.translateSelection",
+        "title": "LLM Translate: Translate Selection"
+      },
+      {
+        "command": "llmLiveTranslate.refresh",
+        "title": "LLM Translate: Refresh Preview",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "llmLiveTranslate.configureApiKey",
+        "title": "LLM Translate: Configure API Key"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "llmLiveTranslate.translateSelection",
+          "when": "editorHasSelection && resourceScheme != llm-translate",
+          "group": "navigation@10"
+        },
+        {
+          "command": "llmLiveTranslate.translateFile",
+          "when": "resourceScheme != llm-translate",
+          "group": "navigation@11"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "llmLiveTranslate.translateFile",
+          "when": "resourceScheme != llm-translate",
+          "group": "navigation"
+        },
+        {
+          "command": "llmLiveTranslate.refresh",
+          "when": "resourceScheme == llm-translate",
+          "group": "navigation"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "llmLiveTranslate.translateFile",
+        "key": "ctrl+alt+t",
+        "mac": "cmd+alt+t",
+        "when": "editorTextFocus && resourceScheme != llm-translate"
+      },
+      {
+        "command": "llmLiveTranslate.translateSelection",
+        "key": "ctrl+alt+s",
+        "mac": "cmd+alt+s",
+        "when": "editorTextFocus && editorHasSelection && resourceScheme != llm-translate"
+      }
+    ],
+    "configuration": {
+      "title": "LLM Live Translate",
+      "properties": {
+        "llmLiveTranslate.provider": {
+          "type": "string",
+          "enum": ["openai", "anthropic"],
+          "default": "openai",
+          "description": "LLM API compatibility type."
+        },
+        "llmLiveTranslate.baseUrl": {
+          "type": "string",
+          "default": "https://api.openai.com/v1",
+          "description": "API base URL. OpenAI-compatible URLs usually end in /v1."
+        },
+        "llmLiveTranslate.model": {
+          "type": "string",
+          "default": "gpt-4o-mini",
+          "description": "Model name sent to the configured API."
+        },
+        "llmLiveTranslate.apiKey": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Fallback API key. Prefer the **LLM Translate: Configure API Key** command, which stores it in VS Code SecretStorage."
+        },
+        "llmLiveTranslate.targetLanguage": {
+          "type": "string",
+          "default": "Simplified Chinese",
+          "description": "Target language for translations."
+        },
+        "llmLiveTranslate.systemPrompt": {
+          "type": "string",
+          "default": "You are a professional translation engine. Translate the complete source text into {targetLanguage}. Never summarize, explain, answer, analyze, omit, or add information. Preserve meaning, tone, Markdown, code, placeholders, URLs, and line breaks where practical. Return only the translation, without labels or commentary.",
+          "description": "Translation system prompt. {targetLanguage} is replaced automatically."
+        },
+        "llmLiveTranslate.liveUpdate": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically refresh open full-file translation previews after source edits."
+        },
+        "llmLiveTranslate.debounceMs": {
+          "type": "number",
+          "default": 1200,
+          "minimum": 200,
+          "maximum": 10000,
+          "description": "Delay before refreshing a live translation after source edits."
+        },
+        "llmLiveTranslate.maxCharacters": {
+          "type": "number",
+          "default": 50000,
+          "minimum": 1,
+          "description": "Maximum characters sent in one translation request."
+        },
+        "llmLiveTranslate.segmentMaxCharacters": {
+          "type": "number",
+          "default": 20000,
+          "minimum": 100,
+          "maximum": 50000,
+          "description": "Maximum characters in each translation segment."
+        },
+        "llmLiveTranslate.maxConcurrentRequests": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 20,
+          "description": "Maximum number of translation requests running concurrently."
+        },
+        "llmLiveTranslate.retryCount": {
+          "type": "number",
+          "default": 2,
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Number of retries for a failed segment request."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "watch": "tsc -w -p .",
+    "lint": "tsc -p . --noEmit",
+    "test": "npm run build && node test/segmenter.test.js",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.6.0",
+    "typescript": "^5.7.0"
+  }
+}
